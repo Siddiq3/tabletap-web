@@ -1,6 +1,30 @@
 "use client";
-import { createApiClient } from "@/contract";
-import { getToken } from "./auth";
+import { ApiError, STAFF_SESSION_ERROR, createApiClient } from "@/contract";
+import { getToken, loginEmail } from "./auth";
+import { endStaffSession, getStaffSession } from "./staff-mode";
 
-/** For the browser: sends the staff member's login token with every call. */
-export const api = createApiClient(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000", getToken);
+const raw = createApiClient(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000", getToken, getStaffSession);
+
+/** For the browser: sends the login token (and the staff session on shared devices) with every call. */
+export const api = Object.fromEntries(
+  Object.entries(raw).map(([name, fn]) => [
+    name,
+    async (...args: unknown[]) => {
+      try {
+        return await (fn as (...a: unknown[]) => Promise<unknown>)(...args);
+      } catch (e) {
+        // Expired/revoked staff session: back to "Who's working?" instead of logging the device out.
+        if (e instanceof ApiError && e.code === STAFF_SESSION_ERROR) endStaffSession();
+        throw e;
+      }
+    },
+  ]),
+) as typeof raw;
+
+/** Re-checks the device account's password ("Continue as owner", turning the PIN lock off). */
+export async function confirmPassword(password: string): Promise<void> {
+  const me = await api.me();
+  const identifier = me.profile?.username ?? (await loginEmail());
+  if (!identifier) throw new Error("Log out and log in again.");
+  await api.login({ identifier, password }); // throws "Wrong login or password." when wrong
+}

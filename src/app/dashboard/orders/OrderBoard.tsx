@@ -116,7 +116,9 @@ export function OrderBoard() {
                     {o.note && <div className="t-note">Note: {o.note}</div>}
                     <div className="row">
                       <span className={`pill ${o.paymentStatus === "paid" ? "paid" : "due"}`}>
-                        {o.paymentStatus === "paid" ? `Paid ${o.paymentMethod ?? ""}` : `Due ${formatINR(o.totalPaise)}`}
+                        {o.paymentStatus === "paid"
+                          ? `Paid ${o.paymentMethod ?? ""}${o.paidByName ? ` by ${o.paidByName}` : ""}`
+                          : `Due ${formatINR(o.totalPaise)}`}
                       </span>
                       <span className="row" style={{ gap: 6 }}>
                         {o.paymentStatus !== "paid" && canTakePayment && (
