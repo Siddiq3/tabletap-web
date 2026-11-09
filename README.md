@@ -9,6 +9,7 @@ Talks only to `tabletap-backend`; never to the database directly.
 - `/r/<slug>/order/<id>`: order tracking with UPI pay button (GPay, PhonePe, Paytm)
 - `/signup`, `/login`: owner/manager account (email, phone or username + password), then `/onboarding`
 - `/reset-password`: where the password-reset email lands
+- `/verify-email`: "Check your email": owners who signed up with an email enter the 6-digit code before using the dashboard
 - `/dashboard/staff`: add waiters/kitchen/cashiers with a PIN (no account). Turn on "Use this device for staff" on a
   shared tablet: it shows "Who's working?", staff unlock with their PIN, and it locks after 10 minutes idle
 - `/onboarding`: restaurant setup (name, menu link, tables, UPI ID)

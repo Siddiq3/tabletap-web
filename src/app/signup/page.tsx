@@ -29,7 +29,8 @@ export default function SignupPage() {
         email: f.email.trim() || undefined, phone: f.phone.trim() || undefined,
       });
       await setSession(session);
-      router.replace("/onboarding");
+      // With an email: verify it first (the code is already on its way), then onboarding.
+      router.replace(f.email.trim() ? "/verify-email?sent=1" : "/onboarding");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your account. Try again.");
       setBusy(false);
