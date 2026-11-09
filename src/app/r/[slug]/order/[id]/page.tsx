@@ -5,9 +5,10 @@ import { OrderTracker } from "./OrderTracker";
 
 export const dynamic = "force-dynamic";
 
-export default async function OrderPage({ params }: { params: { slug: string; id: string } }) {
+export default async function OrderPage(props: { params: Promise<{ slug: string; id: string }> }) {
+  const { slug, id } = await props.params;
   try {
-    const { restaurant, order } = await publicApi.publicOrder(params.slug, params.id);
+    const { restaurant, order } = await publicApi.publicOrder(slug, id);
     return <OrderTracker initial={order} restaurant={restaurant} />;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
