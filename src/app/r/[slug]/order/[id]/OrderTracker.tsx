@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatINR, upiLink, type Order } from "@/contract";
 import { publicApi } from "@/lib/api";
+import { UpiQr } from "@/components/UpiQr";
 
 const STEPS = [
   { status: "new", title: "Order received", sub: "Sent to the kitchen" },
@@ -15,6 +16,20 @@ type Props = { initial: Order; restaurant: { name: string; slug: string; upiId: 
 
 export function OrderTracker({ initial, restaurant }: Props) {
   const [order, setOrder] = useState(initial);
+  const [copyMsg, setCopyMsg] = useState<string | null>(null);
+  const upiRef = useRef<HTMLSpanElement>(null);
+
+  async function copyUpi(upiId: string) {
+    try {
+      await navigator.clipboard.writeText(upiId);
+      setCopyMsg("UPI ID copied.");
+    } catch {
+      // Clipboard blocked (old browser, http, in-app browser): select it so they can copy by hand.
+      const el = upiRef.current;
+      if (el) window.getSelection()?.selectAllChildren(el);
+      setCopyMsg("Couldn't copy automatically. The UPI ID is selected: copy it from your keyboard or long-press it.");
+    }
+  }
 
   // Polling keeps tracking independent of any realtime provider.
   useEffect(() => {
@@ -80,9 +95,19 @@ export function OrderTracker({ initial, restaurant }: Props) {
             <a className="btn w-full" href={upiLink(restaurant.upiId, restaurant.name, order.totalPaise, `Order ${order.orderNo}`)}>
               Pay {formatINR(order.totalPaise)} with UPI
             </a>
+            <div className="wide-only card" style={{ justifyItems: "center" }}>
+              <p className="muted small" style={{ margin: 0 }}>On a laptop? Scan with any UPI app on your phone.</p>
+              <UpiQr upiId={restaurant.upiId} payeeName={restaurant.name} totalPaise={order.totalPaise} orderNo={order.orderNo} />
+            </div>
+            <div className="row">
+              <span className="small">
+                UPI ID: <span ref={upiRef} style={{ userSelect: "all", fontWeight: 700 }}>{restaurant.upiId}</span>
+              </span>
+              <button type="button" className="btn-sm" onClick={() => void copyUpi(restaurant.upiId!)}>Copy UPI ID</button>
+            </div>
+            {copyMsg && <p className="small" role="status" style={{ margin: 0 }}>{copyMsg}</p>}
             <p className="muted small" style={{ margin: 0 }}>
-              Opens GPay, PhonePe or Paytm. UPI ID: <span style={{ userSelect: "all" }}>{restaurant.upiId}</span>.
-              Staff will mark the order paid once they see the payment.
+              Opens GPay, PhonePe or Paytm. After paying, show your payment screen to the staff. They will mark the order paid.
             </p>
           </div>
         )}

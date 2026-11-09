@@ -8,6 +8,7 @@ const LINKS: { href: string; label: string; roles?: Role[] }[] = [
   { href: "/dashboard/orders", label: "Live orders" },
   { href: "/dashboard/menu", label: "Menu", roles: ["owner", "manager"] },
   { href: "/dashboard/tables", label: "Tables & QR", roles: ["owner", "manager"] },
+  { href: "/dashboard/settings", label: "Settings", roles: ["owner", "manager"] },
 ];
 
 export function DashNav({ role }: { role: Role }) {

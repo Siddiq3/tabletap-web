@@ -131,3 +131,14 @@ button { cursor: pointer; }
   .qr-card { break-inside: avoid; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---------- UPI QR ---------- */
+/* QR stays black on white in dark mode too, so every UPI app can scan it. */
+.upi-qr { margin: 0; display: grid; justify-items: center; gap: 8px; }
+.upi-qr img, .upi-qr > div { background: #fff; border-radius: 12px; max-width: 100%; height: auto; }
+.upi-qr figcaption { font-weight: 700; text-align: center; }
+.qr-modal { border: 0; border-radius: 20px; padding: 24px; width: min(460px, calc(100% - 32px)); background: var(--surface); color: var(--ink); }
+.qr-modal::backdrop { background: rgb(0 0 0 / 0.6); }
+.qr-amount { font-family: var(--f-display); font-size: 40px; font-weight: 800; text-align: center; margin: 0; }
+.wide-only { display: none; }
+@media (min-width: 769px) { .wide-only { display: grid; } }

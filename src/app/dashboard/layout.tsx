@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const { restaurant, role } = member;
   return (
-    <MemberContext.Provider value={member}>
+    <MemberContext.Provider value={{ member, setMember }}>
       <header className="dash-top">
         <div className="page">
           <div className="row">

@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BOARD_STAGES, NEXT_STATUS, STATUS_LABEL, formatINR, type Order, type PaymentMethod, type OrderStatus } from "@/contract";
 import { api } from "@/lib/api-client";
 import { subscribeToOrders } from "@/lib/feed";
+import { UpiQr } from "@/components/UpiQr";
 import { useMember } from "../MemberContext";
 
 const STAGE_COLOR: Record<string, string> = {
@@ -33,6 +35,7 @@ export function OrderBoard() {
   const [busy, setBusy] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const seen = useRef<Set<string> | null>(null);
+  const [qrId, setQrId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -70,6 +73,9 @@ export function OrderBoard() {
   const canTakePayment = role === "owner" || role === "manager" || role === "cashier";
   const move = (o: Order, to: OrderStatus) => act(o.id, () => api.moveOrder(o.id, to));
   const pay = (o: Order, m: PaymentMethod) => act(o.id, () => api.markPaid(o.id, m));
+
+  // Latest copy from the board; once it's paid (here or on another device) the modal closes.
+  const qrOrder = orders?.find((o) => o.id === qrId && o.paymentStatus !== "paid") ?? null;
 
   if (!orders) return <p className="muted" style={{ marginTop: 16 }}>{error ?? "Loading orders…"}</p>;
 
@@ -117,6 +123,7 @@ export function OrderBoard() {
                           <>
                             <button className="btn-sm" disabled={disabled} onClick={() => pay(o, "cash")}>Cash</button>
                             <button className="btn-sm" disabled={disabled} onClick={() => pay(o, "upi")}>UPI</button>
+                            <button className="btn-sm" disabled={disabled} onClick={() => { setError(null); setQrId(o.id); }}>Show UPI QR</button>
                           </>
                         )}
                         {next && (
@@ -131,6 +138,36 @@ export function OrderBoard() {
           );
         })}
       </div>
+      {qrOrder && (
+        <dialog
+          className="qr-modal"
+          aria-label={`UPI payment for order ${qrOrder.orderNo}`}
+          ref={(d) => { if (d && !d.open) d.showModal(); }}
+          onClose={() => setQrId(null)}
+        >
+          <div className="stack" style={{ justifyItems: "center", textAlign: "center" }}>
+            <p className="qr-amount num">{formatINR(qrOrder.totalPaise)}</p>
+            <p className="muted" style={{ margin: 0 }}>
+              Order #{qrOrder.orderNo} · {qrOrder.tableLabel ?? "No table"}
+            </p>
+            {restaurant.upiId ? (
+              <>
+                <UpiQr upiId={restaurant.upiId} payeeName={restaurant.name} totalPaise={qrOrder.totalPaise} orderNo={qrOrder.orderNo} size={300} />
+                <p style={{ margin: 0 }}>UPI ID: <b style={{ userSelect: "all" }}>{restaurant.upiId}</b></p>
+                {error && <p className="error" role="alert">{error}</p>}
+                <button className="btn w-full" disabled={busy === qrOrder.id} onClick={() => pay(qrOrder, "upi")}>
+                  {busy === qrOrder.id ? "Saving…" : "Mark UPI paid"}
+                </button>
+              </>
+            ) : (
+              <p>
+                No UPI ID yet. <Link href="/dashboard/settings">Add your UPI ID in Settings</Link>
+              </p>
+            )}
+            <button className="btn-ghost w-full" onClick={() => setQrId(null)}>Close</button>
+          </div>
+        </dialog>
+      )}
       <p className="muted small">New orders appear here automatically. Keep this screen open in the kitchen.</p>
     </div>
   );
