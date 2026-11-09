@@ -19,7 +19,10 @@ export default function OnboardingPage() {
   // Already set up, or not logged in? Send them to the right place.
   useEffect(() => {
     api.me()
-      .then((me) => { if (me.membership) router.replace("/dashboard/orders"); })
+      .then((me) => {
+        if (me.profile && !me.profile.emailVerified) router.replace("/verify-email");
+        else if (me.membership) router.replace("/dashboard/orders");
+      })
       .catch((e) => { if (e instanceof ApiError && e.status === 401) router.replace("/login"); });
   }, [router]);
 

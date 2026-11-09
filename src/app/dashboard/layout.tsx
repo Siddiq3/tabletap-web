@@ -20,7 +20,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     api.me()
-      .then((me) => (me.membership ? setDevice(me.membership) : router.replace("/onboarding")))
+      .then((me) => {
+        if (me.profile && !me.profile.emailVerified) router.replace("/verify-email");
+        else if (me.membership) setDevice(me.membership);
+        else router.replace("/onboarding");
+      })
       .catch((e) => {
         if (e instanceof ApiError && e.status === 401) router.replace("/login");
         else setError(e instanceof Error ? e.message : "Could not load your restaurant.");
