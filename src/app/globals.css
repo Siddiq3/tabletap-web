@@ -142,3 +142,17 @@ button { cursor: pointer; }
 .qr-amount { font-family: var(--f-display); font-size: 40px; font-weight: 800; text-align: center; margin: 0; }
 .wide-only { display: none; }
 @media (min-width: 769px) { .wide-only { display: grid; } }
+
+/* ---------- shared device: Who's working? ---------- */
+.lock { margin: 32px auto 0; width: 100%; }
+.lock-names { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.lock-name { display: grid; gap: 4px; min-height: 96px; place-content: center; text-align: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 16px; }
+.lock-name b { font-family: var(--f-display); font-size: 22px; }
+.lock-name:hover { border-color: var(--accent); }
+.pin-dots { display: flex; gap: 12px; justify-content: center; }
+.pin-dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); }
+.pin-dots i[data-on="true"] { background: var(--ink); border-color: var(--ink); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 320px; width: 100%; margin: 0 auto; }
+.pin-pad button { height: 64px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.staff-badge { font-weight: 800; border-radius: 999px; padding: 4px 10px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.row > input { border: 1px solid var(--line); background: var(--soft); border-radius: 10px; padding: 6px 10px; }
