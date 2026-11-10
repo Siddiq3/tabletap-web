@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatINR, upiLink, type Order } from "@/contract";
+import { CallStaffButton, type CallStaff } from "@/components/CallStaffButton";
 import { publicApi } from "@/lib/api";
 import { UpiQr } from "@/components/UpiQr";
 
@@ -12,9 +13,9 @@ const STEPS = [
   { status: "served", title: "Served", sub: "Enjoy your meal" },
 ] as const;
 
-type Props = { initial: Order; restaurant: { name: string; slug: string; upiId: string | null } };
+type Props = { initial: Order; restaurant: { name: string; slug: string; upiId: string | null }; demo?: boolean; onCallStaff?: CallStaff; onOrderMore?: () => void };
 
-export function OrderTracker({ initial, restaurant }: Props) {
+export function OrderTracker({ initial, restaurant, demo, onOrderMore, onCallStaff }: Props) {
   const [order, setOrder] = useState(initial);
   const [copyMsg, setCopyMsg] = useState<string | null>(null);
   const upiRef = useRef<HTMLSpanElement>(null);
@@ -31,8 +32,11 @@ export function OrderTracker({ initial, restaurant }: Props) {
     }
   }
 
+  useEffect(() => { setOrder(initial); }, [initial]);
+
   // Polling keeps tracking independent of any realtime provider.
   useEffect(() => {
+    if (demo) return;
     if (order.status === "served" && order.paymentStatus === "paid") return;
     const t = setInterval(async () => {
       try {
@@ -41,7 +45,7 @@ export function OrderTracker({ initial, restaurant }: Props) {
       } catch { /* offline for a moment; try again next tick */ }
     }, 5000);
     return () => clearInterval(t);
-  }, [order.id, order.status, order.paymentStatus, restaurant.slug]);
+  }, [order.id, order.status, order.paymentStatus, restaurant.slug, demo]);
 
   const idx = STEPS.findIndex((s) => s.status === order.status);
   const cancelled = order.status === "cancelled";
@@ -59,6 +63,8 @@ export function OrderTracker({ initial, restaurant }: Props) {
           </span>
         </div>
         <p className="muted" style={{ margin: 0 }}>Table {order.tableLabel} · keep this page open to follow your order.</p>
+
+        {order.tableId && <CallStaffButton slug={restaurant.slug} tableId={order.tableId} onCall={onCallStaff}/>}
 
         {cancelled ? (
           <p className="error">This order was cancelled. Please speak to the staff.</p>
@@ -112,12 +118,12 @@ export function OrderTracker({ initial, restaurant }: Props) {
           </div>
         )}
         {order.paymentStatus !== "paid" && !restaurant.upiId && (
-          <p className="muted small" style={{ margin: 0 }}>Please pay at the counter after your meal.</p>
+          <p className="muted small" style={{ margin: 0 }}>{demo ? "Demo only. Use the test controls below to simulate a payment; no money moves." : "Please pay at the counter after your meal."}</p>
         )}
 
-        <a className="btn-ghost" style={{ textAlign: "center", textDecoration: "none" }} href={`/r/${restaurant.slug}${order.tableId ? `?t=${order.tableId}` : ""}`}>
+        {onOrderMore ? <button className="btn-ghost" onClick={onOrderMore}>Order more</button> : <a className="btn-ghost" style={{ textAlign: "center", textDecoration: "none" }} href={`/r/${restaurant.slug}${order.tableId ? `?t=${order.tableId}` : ""}`}>
           Order more
-        </a>
+        </a>}
       </div>
     </div>
   );
