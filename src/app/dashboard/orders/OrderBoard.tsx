@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BOARD_STAGES, NEXT_STATUS, STATUS_LABEL, formatINR, type Order, type PaymentMethod, type OrderStatus } from "@/contract";
 import { api } from "@/lib/api-client";
 import { subscribeToOrders } from "@/lib/feed";
+import { StaffCalls } from "@/components/StaffCalls";
 import { UpiQr } from "@/components/UpiQr";
 import { useMember } from "../MemberContext";
 
@@ -82,6 +83,7 @@ export function OrderBoard() {
   return (
     <div className="stack" style={{ marginTop: 16 }}>
       {error && <p className="error">{error}</p>}
+      <StaffCalls restaurantId={restaurant.id}/>
       <div className="board">
         {BOARD_STAGES.map((stage) => {
           const list = orders.filter((o) => o.status === stage);

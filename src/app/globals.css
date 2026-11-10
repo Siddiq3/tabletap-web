@@ -157,3 +157,13 @@ button { cursor: pointer; }
 .staff-badge { font-weight: 800; border-radius: 999px; padding: 4px 10px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .row > input { border: 1px solid var(--line); background: var(--soft); border-radius: 10px; padding: 6px 10px; }
 .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Guest assistance and staff inbox */
+.call-staff { margin-top: 14px; }
+.call-staff-button { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; }
+.call-staff p { margin: 8px 0 0; }
+.staff-calls { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: var(--surface); }
+.staff-calls h2 { font-size: 20px; }
+.staff-call-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.staff-call-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.staff-call-row button { min-height: 44px; }
