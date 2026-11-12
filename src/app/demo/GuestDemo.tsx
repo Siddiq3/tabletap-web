@@ -1,10 +1,12 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SAMPLE_MENU, SAMPLE_RESTAURANT } from '@/lib/demo-fixtures';
-import { addDemoOrder, changeDemoOrder, useDemoWorkspace } from '@/lib/demo-workspace';
+import { changeDemoOrder, useDemoWorkspace } from '@/lib/demo-workspace';
+import { demoAddOrder, demoBillForOrder, demoMarkOrderPaid, demoTableId } from '@/lib/demo-bills';
 import { requestDemoStaffCall } from '@/lib/demo-calls';
 import { GuestMenu } from '../r/[slug]/GuestMenu';
+import { Brand } from '@/components/Brand';
 import { OrderTracker } from '../r/[slug]/order/[id]/OrderTracker';
 import { NEXT_STATUS, type Order, type PlaceOrderRequest, type PlaceOrderResponse, type PaymentMethod } from '@/contract';
 
@@ -32,6 +34,13 @@ export function GuestDemo() {
 
   async function placeOrder(input: PlaceOrderRequest): Promise<PlaceOrderResponse> {
     if (!input.items.length) throw new Error('Add a dish to your order first.');
+    // Owner demo running: the order joins the table's bill exactly like the real API.
+    if (workspace) {
+      const { order } = demoAddOrder({ tableId: demoTableId(state.table) }, input.items, input.note ?? '', 'qr');
+      setState(s => ({ ...s, order, sequence: order.orderNo + 1, tracking: true }));
+      window.scrollTo({ top: 0 });
+      return { orderId: order.id, orderNo: order.orderNo, totalPaise: order.totalPaise };
+    }
     const lines = input.items.map(({ menuItemId, qty }) => {
       const item = menu.items.find(i => i.id === menuItemId && i.isAvailable);
       if (!item || !Number.isInteger(qty) || qty < 1 || qty > 50) throw new Error('A dish is unavailable. Please update your cart.');
@@ -39,9 +48,8 @@ export function GuestDemo() {
     });
     const subtotalPaise = lines.reduce((sum, line) => sum + line.qty * line.unitPricePaise, 0);
     const taxPaise = Math.round(subtotalPaise * restaurant.taxPercent / 100);
-    const orderNo = Math.max(state.sequence, ...(workspace?.orders.map(o => o.orderNo + 1) ?? []));
+    const orderNo = state.sequence;
     const order: Order = { id: `sample-${Date.now()}-${Math.random().toString(36).slice(2)}`, orderNo, tableId: `demo-table-${state.table}`, tableLabel: state.table, status: 'new', paymentStatus: 'unpaid', paymentMethod: null, note: input.note?.trim() || null, subtotalPaise, taxPaise, totalPaise: subtotalPaise + taxPaise, createdAt: new Date().toISOString(), lines };
-    if (workspace) addDemoOrder(order);
     setState(s => ({ ...s, order, sequence: orderNo + 1, tracking: true }));
     window.scrollTo({ top: 0 });
     return { orderId: order.id, orderNo: order.orderNo, totalPaise: order.totalPaise };
@@ -49,16 +57,19 @@ export function GuestDemo() {
   function more() { setState(s => ({ ...s, tracking: false })); setMenuKey(k => k + 1); window.scrollTo({ top: 0 }); }
   const order = workspace?.orders.find(o => o.id === state.order?.id) ?? state.order;
   function updateOrder(patch: Partial<Order>) { if (!order) return; const updated = { ...order, ...patch }; if (workspace) changeDemoOrder(order.id, patch); setState(s => ({ ...s, order: updated })); }
-  function pay(method: PaymentMethod) { updateOrder({ paymentStatus: 'paid', paymentMethod: method }); }
+  function pay(method: PaymentMethod) { if (workspace && order) { demoMarkOrderPaid(order.id, method); setState(st => ({ ...st, order: { ...order, paymentStatus: 'paid', paymentMethod: method } })); } else updateOrder({ paymentStatus: 'paid', paymentMethod: method }); }
   const next = order && NEXT_STATUS[order.status];
+  // Owner demo running: the guest sees their table's whole open bill, like the real API returns.
+  const orderId = order?.id;
+  const loadBill = useCallback(async () => demoBillForOrder(orderId), [orderId]);
   useEffect(() => { if (workspace && Number(state.table) > workspace.tableCount) setState(s => ({ ...s, table: '1' })); }, [workspace, state.table]);
   return <div className="guest-demo">
-    <div className="gd-banner"><div><Link href="/" className="gd-brand">tabletap.</Link><strong>Customer demo</strong><Link href="/demo/staff" target="_blank" rel="noreferrer">Open staff alert view</Link></div><p>Sample restaurant · No real orders or payments</p><button className="btn-ghost" onClick={() => { setState(fresh()); setMenuKey(k => k + 1); }}>Reset demo</button></div>
+    <div className="gd-banner"><div><Link href="/" aria-label="Tabletap home" style={{ textDecoration: 'none' }}><Brand /></Link><span className="pill">Demo</span></div><div><Link href="/demo/staff" target="_blank" rel="noreferrer">Staff view ↗</Link><button className="btn-sm" onClick={() => { setState(fresh()); setMenuKey(k => k + 1); }}>Reset</button></div></div>
     {!ready ? <p className="gd-loading">Opening the sample menu…</p> : state.tracking && order ? <>
-      <OrderTracker initial={order} restaurant={restaurant} demo onCallStaff={requestDemoStaffCall} onOrderMore={more}/>
-      <aside className="gd-controls" aria-label="Demo controls"><h2>Try the kitchen response</h2><p>These test controls simulate what staff do. Your guests only see their order status and payment confirmation.</p><div className="gd-control-buttons">{next && <button className="btn" onClick={() => updateOrder({ status: next.to })}>Simulate {next.to}</button>}{order.paymentStatus !== 'paid' && <><button className="btn-ghost" onClick={() => pay('upi')}>Simulate UPI payment</button><button className="btn-ghost" onClick={() => pay('cash')}>Simulate cash payment</button></>}</div>{order.status === 'served' && order.paymentStatus === 'paid' && <p role="status">Meal served and sample bill paid. You’ve completed the customer journey.</p>}</aside>
+      <OrderTracker initial={order} restaurant={restaurant} demo onCallStaff={requestDemoStaffCall} onOrderMore={more} loadBill={workspace ? loadBill : undefined}/>
+      <aside className="gd-controls" aria-label="Demo controls"><h2>Play the kitchen</h2><p>Guests don’t see these buttons.</p><div className="gd-control-buttons">{next && <button className="btn" onClick={() => updateOrder({ status: next.to })}>Simulate {next.to}</button>}{order.paymentStatus !== 'paid' && <><button className="btn-ghost" onClick={() => pay('upi')}>Simulate UPI payment</button><button className="btn-ghost" onClick={() => pay('cash')}>Simulate cash payment</button></>}</div>{order.status === 'served' && order.paymentStatus === 'paid' && <p role="status">Served and paid. That’s the whole journey.</p>}</aside>
     </> : <>
-      <details className="gd-intro"><summary>Demo options · Table {state.table}</summary><h2>You’re at the table.</h2><p>This is what opens after a guest scans a table QR. Add a dish, review the bill, and send your sample order.</p><label>Try another table<select aria-label="Choose sample table" value={state.table} onChange={e => { setState(s => ({ ...s, table: e.target.value })); setMenuKey(k => k + 1); }}>{(workspace ? Array.from({ length: workspace.tableCount }, (_, i) => String(i + 1)) : ['1', '3', '7']).map(table => <option key={table} value={table}>Table {table}</option>)}</select></label>{order && <button className="btn-ghost" onClick={() => setState(s => ({ ...s, tracking: true }))}>Back to order #{order.orderNo}</button>}</details>
+      <details className="gd-intro"><summary>Demo options · Table {state.table}</summary><label>Try another table<select aria-label="Choose sample table" value={state.table} onChange={e => { setState(s => ({ ...s, table: e.target.value })); setMenuKey(k => k + 1); }}>{(workspace ? Array.from({ length: workspace.tableCount }, (_, i) => String(i + 1)) : ['1', '3', '7']).map(table => <option key={table} value={table}>Table {table}</option>)}</select></label>{order && <button className="btn-ghost" onClick={() => setState(s => ({ ...s, tracking: true }))}>Back to order #{order.orderNo}</button>}</details>
       <GuestMenu key={menuKey} restaurant={restaurant} table={{ id: `demo-table-${state.table}`, label: state.table }} menu={menu} onCallStaff={requestDemoStaffCall} onPlaceOrder={placeOrder} onOrderPlaced={() => {}}/>
     </>}
   </div>;

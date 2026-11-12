@@ -63,3 +63,16 @@ Open `/demo/owner` and use **Restart owner demo** to start over. Follow account 
 In **Menu**, add a category and dish, or load sample dishes; toggle availability to see changes in a guest tab. In **Tables**, choose a table and open its guest menu/QR. Guest orders show under **Orders**, and owner stage/payment changes update the guest tracker. In **Staff**, add, edit, deactivate or reset the PIN of sample staff and test a PIN; these are sample records only and don't unlock anything. **Staff calls** displays the same browser-local assistance requests and sound control. Owner logout/login and page refresh preserve sample progress. The owner/guest demo uses local browser storage, so use two tabs in the same browser; separate devices and the Expo app do not share this sample workspace.
 
 The real `/signup`, verification, onboarding, and dashboard routes continue to require the backend and Supabase configuration. The walkthrough exercises the local demo experience; it does not verify live signup, email delivery, database writes, or payment processing.
+
+## Bills, KOTs and reports
+
+- **Bills** (owner, manager, cashier, waiter): one bill per table visit with an invoice number. Guest QR orders, items a waiter adds (**Add items**, **Start an order for a table**) and **New takeaway** orders all appear here. Each round shows who placed it and has **Print KOT**.
+- **Print bill** prints only the bill at receipt width (80mm; A4 works). With a GSTIN set it is a tax invoice: GSTIN, FSSAI, invoice number, SAC 996331, discount, service charge or packaging, CGST + SGST, round-off, payments, and a UPI QR for anything still due.
+- **Take payment**: enter the amount (defaults to the balance) and choose Cash, UPI or Card. Less than the balance splits the bill; it closes when fully paid. If the bill changes while you confirm, the screen shows the update instead.
+- Managers: **discount** with a reason, waive the **service charge**, **cancel an item** with a reason, **void** a bill with no payments. Anyone serving can **move** a bill to a free table; cashiers and managers can **merge** bills.
+- **Orders** board: **Print KOT** on every ticket, and **Auto-print KOTs on this device** for the kitchen screen (Chrome's `--kiosk-printing` flag skips the dialog).
+- **Reports** (owner, manager): today, yesterday, this month or any range: total sales, bills, average bill, GST (CGST/SGST), payments by method, top dishes, cancellations, voids. **Print day close** gives a receipt-width summary.
+- **Settings**: GSTIN, FSSAI, service charge % and takeaway packaging charge.
+- Guests who ordered by QR see their whole bill on the order page (all rounds, discount, charges, GST) and pay it with one UPI button.
+
+Try it without services: `/demo/owner` → **Bills** (same screen on browser storage, including **Bill settings**). The real dashboard needs backend migrations up to 0012.

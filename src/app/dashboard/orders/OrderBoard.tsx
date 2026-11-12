@@ -7,11 +7,16 @@ import { api } from "@/lib/api-client";
 import { subscribeToOrders } from "@/lib/feed";
 import { StaffCalls } from "@/components/StaffCalls";
 import { UpiQr } from "@/components/UpiQr";
+import { Kot } from "@/components/Kot";
+import { usePrint } from "@/components/Print";
 import { useMember } from "../MemberContext";
 
 const STAGE_COLOR: Record<string, string> = {
-  new: "var(--accent)", preparing: "var(--turmeric)", ready: "var(--info)", served: "var(--good)",
+  new: "var(--accent)", preparing: "var(--ink)", ready: "var(--good)", served: "var(--line)",
 };
+
+const AUTO_KOT = "tabletap.auto-kot";
+const where = (o: Order) => (o.tableLabel ? `Table ${o.tableLabel.replace(/^T(?=\d)/, "")}` : "Takeaway");
 
 function minutesAgo(iso: string, now: number) {
   const m = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000));
@@ -37,6 +42,17 @@ export function OrderBoard() {
   const [now, setNow] = useState(() => Date.now());
   const seen = useRef<Set<string> | null>(null);
   const [qrId, setQrId] = useState<string | null>(null);
+  const { print, area } = usePrint();
+  // Per device: the kitchen screen prints a KOT for every new order; the counter laptop usually doesn't.
+  const [autoKot, setAutoKot] = useState(false);
+  const autoKotRef = useRef(false);
+  const printRef = useRef(print);
+  printRef.current = print;
+  useEffect(() => { try { const on = localStorage.getItem(AUTO_KOT) === "on"; setAutoKot(on); autoKotRef.current = on; } catch { /* storage blocked */ } }, []);
+  function toggleAutoKot() {
+    const on = !autoKot; setAutoKot(on); autoKotRef.current = on;
+    try { localStorage.setItem(AUTO_KOT, on ? "on" : "off"); } catch { /* storage blocked */ }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -44,6 +60,7 @@ export function OrderBoard() {
       const fresh = orders.filter((o) => o.status === "new" && seen.current && !seen.current.has(o.id));
       seen.current = new Set(orders.map((o) => o.id));
       if (fresh.length) beep();
+      if (fresh.length && autoKotRef.current) printRef.current(<>{fresh.map((o) => <Kot key={o.id} order={o} where={where(o)} />)}</>);
       setOrders(orders);
       setError(null);
     } catch (e) {
@@ -84,6 +101,10 @@ export function OrderBoard() {
     <div className="stack" style={{ marginTop: 16 }}>
       {error && <p className="error">{error}</p>}
       <StaffCalls restaurantId={restaurant.id}/>
+      <label className="row no-print" style={{ justifyContent: "flex-start", gap: 8 }}>
+        <input type="checkbox" checked={autoKot} onChange={toggleAutoKot} />
+        <span><b>Auto-print KOTs on this device</b> <span className="muted small">For the kitchen printer. Chrome can skip the print dialog with the --kiosk-printing flag.</span></span>
+      </label>
       <div className="board">
         {BOARD_STAGES.map((stage) => {
           const list = orders.filter((o) => o.status === stage);
@@ -104,8 +125,12 @@ export function OrderBoard() {
                 return (
                   <article className="ticket" key={o.id} aria-busy={disabled}>
                     <div className="row">
-                      <b style={{ fontFamily: "var(--f-display)", fontSize: 17 }}>{o.tableLabel ?? "No table"}</b>
+                      <b style={{ fontFamily: "var(--f-display)", fontSize: 17 }}>{where(o)}</b>
                       <span className="muted small num">#{o.orderNo} · {minutesAgo(o.createdAt, now)}</span>
+                    </div>
+                    <div className="row">
+                      <span className="muted small">{o.source === "staff" ? `Added by ${o.placedByName ?? "staff"}` : "Guest QR"}</span>
+                      <button className="btn-sm no-print" onClick={() => print(<Kot order={o} where={where(o)} />)}>Print KOT</button>
                     </div>
                     <ul>
                       {o.lines.map((l, i) => (
@@ -172,7 +197,7 @@ export function OrderBoard() {
           </div>
         </dialog>
       )}
-      <p className="muted small">New orders appear here automatically. Keep this screen open in the kitchen.</p>
+      {area}
     </div>
   );
 }

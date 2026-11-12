@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 import type { Role } from "@/contract";
 
 const LINKS: { href: string; label: string; roles?: Role[] }[] = [
-  { href: "/dashboard/orders", label: "Live orders" },
+  { href: "/dashboard/orders", label: "Orders" },
+  { href: "/dashboard/bills", label: "Bills", roles: ["owner", "manager", "cashier", "waiter"] },
+  { href: "/dashboard/reports", label: "Reports", roles: ["owner", "manager"] },
   { href: "/dashboard/menu", label: "Menu", roles: ["owner", "manager"] },
   { href: "/dashboard/tables", label: "Tables & QR", roles: ["owner", "manager"] },
   { href: "/dashboard/staff", label: "Staff", roles: ["owner", "manager"] },
