@@ -2,13 +2,12 @@
 
 The `/` route is a marketing page for restaurant owners. Existing account and dashboard routes retain their styling. `landing.css` scopes the visual design to `.landing`; daisyUI components use the `tt-` prefix to avoid collisions with existing controls. Tailwind preflight is intentionally omitted.
 
-The page uses the existing Bricolage Grotesque and Figtree fonts, coral calls to action, green typography, and pale green section backgrounds. Animation is concentrated in the opening product scene and order transitions; reduced motion disables both. The guest menu, restaurant name, food prices, stock list, and ordering demo are explicitly illustrative. The demo uses local state and does not create real orders. Trial duration comes from the existing signup copy and database schema; paid pricing is not advertised.
+Design idea: the kitchen pass. The hero is a steel rail where example kitchen tickets (KOTs) arrive every few seconds and get stamped New, Cooking, Ready (`TicketRail.tsx`; static under reduced motion). Palette: curry-leaf green, thermal-paper white, turmeric for the one primary action, chilli for "New". Type: Archivo (wide) for display and text; IBM Plex Mono only inside tickets and the bill. Features are shown as a printed bill, not cards. The "How it works" QR is real, generated at build time from `NEXT_PUBLIC_APP_URL` + `/demo?table=7`.
 
 ## Photography
 
 Downloaded as local JPEG assets from Unsplash:
 
-- `public/images/fresh-bowl.jpg`: https://images.unsplash.com/photo-1512621776951-a57141f2eefd
 - `public/images/menu-bowl.jpg`: https://images.unsplash.com/photo-1546069901-ba9599a7e63c
 
 ## Verification

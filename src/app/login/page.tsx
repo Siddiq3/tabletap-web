@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
 import { setSession } from "@/lib/auth";
+import { AuthShell } from "@/components/Brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,8 +30,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="page narrow stack" style={{ paddingTop: 64 }}>
-      <h1>{forgot ? "Reset your password" : "Restaurant login"}</h1>
+    <AuthShell
+      title={forgot ? "Reset your password" : "Welcome back"}
+      sub={forgot ? "We'll email you a reset link." : undefined}
+      foot={<>New restaurant? <Link href="/signup">Create an account</Link><br /><span className="small">Staff? Ask your owner for a PIN.</span></>}
+    >
       <form
         className="card stack"
         onSubmit={(e) => {
@@ -57,20 +61,14 @@ export default function LoginPage() {
           </label>
         )}
         {error && <p className="error" role="alert">{error}</p>}
-        {notice && <p role="status" style={{ margin: 0, fontWeight: 600 }}>{notice}</p>}
+        {notice && <p role="status" className="notice">{notice}</p>}
         <button className="btn" disabled={busy}>
           {busy ? "Please wait…" : forgot ? "Send reset link" : "Log in"}
         </button>
-        <button type="button" className="btn-ghost" onClick={() => { setForgot(!forgot); setError(null); setNotice(null); }}>
+        <button type="button" className="link-btn small" style={{ justifySelf: "center" }} onClick={() => { setForgot(!forgot); setError(null); setNotice(null); }}>
           {forgot ? "Back to login" : "Forgot password?"}
         </button>
       </form>
-      <p className="muted" style={{ textAlign: "center" }}>
-        New restaurant? <Link href="/signup">Create an account</Link>
-      </p>
-      <p className="muted small" style={{ textAlign: "center" }}>
-        Waiters, kitchen and cashiers don&apos;t need an account. Ask the owner to add you under Staff.
-      </p>
-    </main>
+    </AuthShell>
   );
 }

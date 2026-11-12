@@ -77,7 +77,7 @@ export default function StaffPage() {
       >
         <h2 style={{ fontSize: 20 }}>Add staff</h2>
         <p className="muted small" style={{ margin: 0 }}>
-          Staff don&apos;t need an account or email. They use a PIN on a device where you&apos;re logged in.
+          No account needed. Staff unlock with their PIN.
         </p>
         <div className="form-grid">
           <label className="field">
@@ -164,8 +164,7 @@ function DeviceLock() {
           <b>Use this device for staff (PIN lock)</b>
           <br />
           <span className="muted small">
-            Shows &ldquo;Who&apos;s working?&rdquo; and locks after 10 minutes without a tap. Turn on for the kitchen
-            tablet or counter screen, not your own laptop.
+            For a shared kitchen or counter screen. Locks after 10 minutes idle.
           </span>
         </span>
         <button

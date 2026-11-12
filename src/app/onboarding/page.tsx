@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, slugify } from "@/contract";
 import { api } from "@/lib/api-client";
+import { AuthShell } from "@/components/Brand";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -40,9 +41,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="page narrow stack" style={{ paddingTop: 40 }}>
-      <h1>Set up your restaurant</h1>
-      <p className="muted" style={{ margin: 0 }}>Takes about two minutes. You can change all of this later.</p>
+    <AuthShell title="Set up your restaurant" sub="You can change this anytime.">
       <form className="card stack" onSubmit={submit}>
         <label className="field">
           <span>Restaurant name</span>
@@ -56,16 +55,14 @@ export default function OnboardingPage() {
         <label className="field">
           <span>Number of tables</span>
           <input id="tables" type="number" min={1} max={200} required value={tables} onChange={(e) => setTables(e.target.value)} />
-          <small>We create a QR code for each table (T1, T2 …).</small>
         </label>
         <label className="field">
           <span>UPI ID for payments (optional)</span>
           <input id="upiId" value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="spiceroute@okaxis" />
-          <small>Guests pay straight to this UPI ID.</small>
         </label>
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
         <button className="btn" disabled={busy}>{busy ? "Setting up…" : "Create my restaurant"}</button>
       </form>
-    </main>
+    </AuthShell>
   );
 }

@@ -1,13 +1,44 @@
 "use client";
 import { useState } from "react";
+import { Kot } from "./TicketRail";
+
+const STAGES = ["New", "Cooking", "Ready", "Served"];
+const ACTION = ["Start cooking", "Mark ready", "Mark served"];
+
+/** Try-it block: the guest adds bowls, sends the order, and the kitchen ticket moves through each stage. */
 export function OrderingDemo() {
-  const [quantity, setQuantity] = useState(0);
-  const [stage, setStage] = useState(0);
-  const labels = ["New order", "Preparing", "Ready to serve", "Served"];
-  return <div className="lp-demo-board">
-    <div className="lp-demo-board-top"><strong>The Green Table</strong><span>Sample restaurant</span></div>
-    <div className="lp-demo-columns"><div className="lp-demo-guest"><span className="lp-demo-side-label">Guest view · Table 07</span><h3>Something delicious?</h3><div className="lp-demo-item"><div><strong>Garden goodness bowl</strong><span>₹240 · Vegetarian</span></div><button className="tt-btn lp-demo-add" aria-label="Add garden goodness bowl" disabled={stage > 0} onClick={() => setQuantity(q => q + 1)}>+</button></div><div className="lp-demo-total"><span>{quantity} {quantity === 1 ? "bowl" : "bowls"}</span><strong>₹{quantity * 240}</strong></div><button className="tt-btn lp-button" disabled={quantity === 0 || stage > 0} onClick={() => setStage(1)}>{stage > 0 ? "Order sent ✓" : "Send to kitchen"}</button><p>Illustrative subtotal, before GST.</p></div>
-    <div className="lp-demo-kitchen"><span className="lp-demo-side-label">Kitchen view</span>{stage === 0 ? <div className="lp-demo-empty"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true"><path d="M3 17h18M5 16a7 7 0 0 1 14 0M12 6V3m-2 0h4M7 21h10"/></svg><strong>Ready when they are.</strong><span>Add a bowl and send your first order.</span></div> : <div className="lp-demo-ticket" key={stage}><div><strong>Table 07</strong><span className="tt-badge lp-live-badge">{labels[stage - 1]}</span></div><p>{quantity} × Garden goodness bowl</p><span className="lp-demo-ticket-note">Freshly ordered, straight from the table.</span>{stage < 4 ? <button className="tt-btn lp-kitchen-action" onClick={() => setStage(s => s + 1)}>{["", "Start preparing", "Mark ready", "Mark served"][stage]}</button> : <strong className="lp-demo-served">All served. Enjoy the good company.</strong>}</div>}</div></div>
-    <div className="lp-demo-board-bottom" aria-live="polite"><span>{stage === 0 ? "Try the flow, one tap at a time." : `Table 07: ${labels[stage - 1].toLowerCase()}.`}</span><button onClick={() => { setQuantity(0); setStage(0); }}>Reset demo</button></div>
-  </div>;
+  const [qty, setQty] = useState(1);
+  const [stage, setStage] = useState(-1); // -1 = not sent yet
+  const sent = stage >= 0;
+  return (
+    <div className="try">
+      <div className="try-guest">
+        <p className="try-side">Guest phone, table 7</p>
+        <div className="try-dish">
+          <div><b>Paneer tikka bowl</b><span>₹240</span></div>
+          <div className="try-qty">
+            <button aria-label="Remove one bowl" disabled={sent || qty === 0} onClick={() => setQty((q) => q - 1)}>−</button>
+            <span aria-live="polite">{qty}</span>
+            <button aria-label="Add one bowl" disabled={sent || qty >= 9} onClick={() => setQty((q) => q + 1)}>+</button>
+          </div>
+        </div>
+        <div className="try-total"><span>Total before GST</span><b>₹{qty * 240}</b></div>
+        <button className="lp-cta" disabled={qty === 0 || sent} onClick={() => setStage(0)}>{sent ? "Order sent" : "Place order"}</button>
+      </div>
+      <div className="try-kitchen">
+        <p className="try-side">Kitchen</p>
+        <div className="rail-bar" />
+        {sent ? (
+          <ol className="rail-tickets try-ticket"><Kot key={stage} no={1049} order={{ table: "7", lines: [[qty, "Paneer tikka bowl"]] }} stamp={STAGES[stage]} fresh={stage === 0} /></ol>
+        ) : (
+          <p className="try-wait">The ticket prints here when the guest places the order.</p>
+        )}
+        <div className="try-actions" aria-live="polite">
+          {sent && stage < 3 && <button className="lp-cta lp-cta-dark" onClick={() => setStage((s) => s + 1)}>{ACTION[stage]}</button>}
+          {stage === 3 && <span>Served. The guest saw every step on their phone.</span>}
+          {sent && <button className="try-reset" onClick={() => { setStage(-1); setQty(1); }}>Start over</button>}
+        </div>
+      </div>
+    </div>
+  );
 }

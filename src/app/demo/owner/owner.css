@@ -1,21 +1,31 @@
 .owner-demo { max-width: 1120px; padding-top: 24px; }
 .owner-demo button, .owner-demo .btn { min-height: 44px; }
 .od-header { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 14px; }
-.od-brand { font-family: var(--f-display); color: var(--accent); font-size: 28px; font-weight: 800; letter-spacing: -.7px; text-decoration: none; }
-.od-header > span { font-size: 12px; color: var(--muted); }
-.od-header > button { font-size: 12px; }
-.od-notice { padding: 14px 17px; border-radius: 12px; background: var(--soft); color: var(--muted); font-size: 13px; line-height: 1.7; margin: 25px 0; }
+.od-notice { padding: 14px 17px; border-radius: 12px; background: var(--soft); color: var(--muted); font-size: 13px; line-height: 1.7; margin: 20px 0; }
 .od-progress { display: flex; flex-wrap: wrap; padding: 0; list-style: none; gap: 10px 25px; font-size: 13px; color: var(--muted); margin-bottom: 35px; }
-.od-progress [aria-current] { color: var(--accent); font-weight: 700; }
+.od-progress [aria-current] { color: var(--ink); font-weight: 800; text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 3px; text-underline-offset: 6px; }
 .od-form { max-width: 520px; width: 100%; margin: 0 auto; display: grid; gap: 18px; padding-block: 10px 35px; }
 .od-form h1 { font-size: 32px; }.od-form > p { margin: 0; line-height: 1.7; }
 .od-dashboard-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; margin: 30px 0; }.od-dashboard-head h1 { font-size: 32px; }
-.od-tabs { display: flex; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 20px; margin-bottom: 30px; }.od-tabs button { font-size: 13px; }
+.od-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 28px; }
+.od-tabs button { border: 0; background: none; padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.od-tabs button:hover { background: var(--soft); color: var(--ink); }
+.od-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
 .od-menu-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 45px; }.od-menu-layout h2, .od-form h2 { font-size: 24px; }.od-menu-layout h3 { font-size: 18px; }.od-menu-layout section { align-content: start; }.od-menu-layout section > p { margin: 0; }
 .od-menu-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding-block: 18px; border-bottom: 1px solid var(--line); }.od-menu-row p { margin: 5px 0 0; }
 .od-qr { display: grid; justify-items: center; gap: 16px; background: white; color: #203b31; }.od-qr img { max-width: 100%; height: auto; }
 .od-orders { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }.od-orders > section { min-width: 0; }.od-orders h3 { font-size: 15px; }.od-orders .ticket { overflow-wrap: anywhere; }.od-orders .btn { font-size: 12px; }
 @media (max-width: 850px) { .od-orders { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .od-menu-layout { grid-template-columns: 1fr; gap: 30px; }.od-form h1 { font-size: 28px; }.od-orders { grid-template-columns: 1fr; }.od-dashboard-head h1 { font-size: 28px; }.od-header > span { order: 3; width: 100%; } }
+@media (max-width: 600px) { .od-menu-layout { grid-template-columns: 1fr; gap: 30px; }.od-form h1 { font-size: 28px; }.od-orders { grid-template-columns: 1fr; }.od-dashboard-head h1 { font-size: 28px; }}
 
 .od-dashboard-head > div:first-child { min-width: 0; flex: 1; }.od-dashboard-head h1, .od-form h1 { overflow-wrap: anywhere; }
+
+/* 60-30-10: green top block and restaurant header (30%), light work area (60%), turmeric for the active tab and main buttons (10%). */
+.od-top { gap: 14px; margin-bottom: 30px; }
+.od-top .od-notice { margin: 0; background: rgb(255 253 246 / .1); color: rgb(255 253 246 / .8); }
+.od-top .od-notice strong { color: var(--accent); }
+.od-top .od-progress { margin: 0; color: rgb(255 253 246 / .6); }
+.od-top .od-progress [aria-current] { color: #fffdf6; }
+.od-dashboard-head.zone { display: flex; margin: 0 0 22px; padding: 26px 28px; }
+.od-tabs { border-bottom: 0; }
+.od-tabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }

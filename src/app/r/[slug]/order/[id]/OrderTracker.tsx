@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatINR, upiLink, type Order } from "@/contract";
+import { formatINR, formatInvoiceNo, upiLink, type Bill, type Order } from "@/contract";
 import { CallStaffButton, type CallStaff } from "@/components/CallStaffButton";
 import { publicApi } from "@/lib/api";
 import { UpiQr } from "@/components/UpiQr";
@@ -13,10 +13,12 @@ const STEPS = [
   { status: "served", title: "Served", sub: "Enjoy your meal" },
 ] as const;
 
-type Props = { initial: Order; restaurant: { name: string; slug: string; upiId: string | null }; demo?: boolean; onCallStaff?: CallStaff; onOrderMore?: () => void };
+/** loadBill: where the table bill comes from in the demo (the real page asks the API). */
+type Props = { initial: Order; restaurant: { name: string; slug: string; upiId: string | null }; demo?: boolean; onCallStaff?: CallStaff; onOrderMore?: () => void; loadBill?: () => Promise<Bill | null> };
 
-export function OrderTracker({ initial, restaurant, demo, onOrderMore, onCallStaff }: Props) {
+export function OrderTracker({ initial, restaurant, demo, onOrderMore, onCallStaff, loadBill }: Props) {
   const [order, setOrder] = useState(initial);
+  const [bill, setBill] = useState<Bill | null>(null);
   const [copyMsg, setCopyMsg] = useState<string | null>(null);
   const upiRef = useRef<HTMLSpanElement>(null);
 
@@ -47,24 +49,41 @@ export function OrderTracker({ initial, restaurant, demo, onOrderMore, onCallSta
     return () => clearInterval(t);
   }, [order.id, order.status, order.paymentStatus, restaurant.slug, demo]);
 
+  // The table's whole bill (every round, QR or waiter) so the guest pays once at the end.
+  useEffect(() => {
+    if (demo && !loadBill) return;
+    let live = true;
+    const get = () => (loadBill ? loadBill() : publicApi.publicBill(restaurant.slug, order.id).then((r) => r.bill))
+      .then((b) => { if (live) setBill(b); })
+      .catch(() => { /* keep the last bill; try again next tick */ });
+    void get();
+    const t = setInterval(get, 5000);
+    return () => { live = false; clearInterval(t); };
+  }, [order.id, restaurant.slug, demo, loadBill]);
+
+  // While the bill is open, the guest pays the bill (it may hold other rounds, service charge, a discount).
+  const tableBill = bill;
+  const payPaise = tableBill ? tableBill.duePaise : order.paymentStatus !== "paid" ? order.totalPaise : 0;
+  const payNote = tableBill ? `Invoice ${formatInvoiceNo(tableBill.invoiceNo)}` : `Order ${order.orderNo}`;
+
   const idx = STEPS.findIndex((s) => s.status === order.status);
   const cancelled = order.status === "cancelled";
 
   return (
     <div className="cust">
       <div className="sheet-inner">
-        <div className="row">
-          <div>
-            <p className="label" style={{ margin: 0 }}>{restaurant.name}</p>
-            <h1 style={{ fontSize: 26 }}>Order #{order.orderNo}</h1>
+        <header className="track-head">
+          <div className="row">
+            <div>
+              <p className="small">{restaurant.name}, table {order.tableLabel}</p>
+              <h1 style={{ fontSize: 28 }}>Order #{order.orderNo}</h1>
+            </div>
+            <span className={`pill ${order.paymentStatus === "paid" ? "paid" : "due"}`}>
+              {order.paymentStatus === "paid" ? "Paid" : "Payment due"}
+            </span>
           </div>
-          <span className={`pill ${order.paymentStatus === "paid" ? "paid" : "due"}`}>
-            {order.paymentStatus === "paid" ? "Paid" : "Payment due"}
-          </span>
-        </div>
-        <p className="muted" style={{ margin: 0 }}>Table {order.tableLabel} · keep this page open to follow your order.</p>
-
-        {order.tableId && <CallStaffButton slug={restaurant.slug} tableId={order.tableId} onCall={onCallStaff}/>}
+          {order.tableId && <CallStaffButton slug={restaurant.slug} tableId={order.tableId} onCall={onCallStaff}/>}
+        </header>
 
         {cancelled ? (
           <p className="error">This order was cancelled. Please speak to the staff.</p>
@@ -84,26 +103,50 @@ export function OrderTracker({ initial, restaurant, demo, onOrderMore, onCallSta
         )}
 
         <div className="card stack">
+          {tableBill && <b>This order</b>}
           {order.lines.map((l, i) => (
             <div className="row" key={i}>
               <span><span className={`mark ${l.isVeg ? "v" : "n"}`} />{l.qty} × {l.name}</span>
               <span className="num">{formatINR(l.unitPricePaise * l.qty)}</span>
             </div>
           ))}
-          <div className="totals">
-            <div className="muted"><span>GST</span><span>{formatINR(order.taxPaise)}</span></div>
-            <div className="grand"><span>Total</span><span>{formatINR(order.totalPaise)}</span></div>
-          </div>
+          {!tableBill && (
+            <div className="totals">
+              <div className="muted"><span>GST</span><span>{formatINR(order.taxPaise)}</span></div>
+              <div className="grand grand-zone"><span>Total</span><span>{formatINR(order.totalPaise)}</span></div>
+            </div>
+          )}
         </div>
 
-        {order.paymentStatus !== "paid" && restaurant.upiId && (
+        {tableBill && (
+          <section className="card stack" aria-label="Your table's bill">
+            <div className="row"><b>Your bill</b><span className="muted small">{tableBill.orders.length === 1 ? "1 order" : `${tableBill.orders.length} orders on this table`}</span></div>
+            {tableBill.lines.map((l) => (
+              <div className="row" key={`${l.name}|${l.unitPricePaise}|${l.isVeg}`}>
+                <span><span className={`mark ${l.isVeg ? "v" : "n"}`} />{l.qty} × {l.name}</span>
+                <span className="num">{formatINR(l.unitPricePaise * l.qty)}</span>
+              </div>
+            ))}
+            <div className="totals">
+              {tableBill.discountPaise > 0 && <div className="muted"><span>Discount</span><span>− {formatINR(tableBill.discountPaise)}</span></div>}
+              {tableBill.serviceChargePaise > 0 && <div className="muted"><span>Service charge</span><span>{formatINR(tableBill.serviceChargePaise)}</span></div>}
+              {tableBill.packagingPaise > 0 && <div className="muted"><span>Packaging</span><span>{formatINR(tableBill.packagingPaise)}</span></div>}
+              <div className="muted"><span>GST</span><span>{formatINR(tableBill.taxPaise)}</span></div>
+              {tableBill.roundOffPaise !== 0 && <div className="muted"><span>Round off</span><span>{formatINR(tableBill.roundOffPaise)}</span></div>}
+              {tableBill.paidPaise > 0 && <div className="muted"><span>Already paid</span><span>− {formatINR(tableBill.paidPaise)}</span></div>}
+              <div className="grand grand-zone"><span>{tableBill.paidPaise > 0 ? "Balance due" : "Total"}</span><span>{formatINR(tableBill.duePaise)}</span></div>
+            </div>
+          </section>
+        )}
+
+        {payPaise > 0 && restaurant.upiId && (
           <div className="stack">
-            <a className="btn w-full" href={upiLink(restaurant.upiId, restaurant.name, order.totalPaise, `Order ${order.orderNo}`)}>
-              Pay {formatINR(order.totalPaise)} with UPI
+            <a className="btn w-full" href={upiLink(restaurant.upiId, restaurant.name, payPaise, payNote)}>
+              Pay {formatINR(payPaise)} with UPI
             </a>
             <div className="wide-only card" style={{ justifyItems: "center" }}>
-              <p className="muted small" style={{ margin: 0 }}>On a laptop? Scan with any UPI app on your phone.</p>
-              <UpiQr upiId={restaurant.upiId} payeeName={restaurant.name} totalPaise={order.totalPaise} orderNo={order.orderNo} />
+              <p className="muted small">Scan with any UPI app</p>
+              <UpiQr upiId={restaurant.upiId} payeeName={restaurant.name} totalPaise={payPaise} note={payNote} />
             </div>
             <div className="row">
               <span className="small">
@@ -112,16 +155,14 @@ export function OrderTracker({ initial, restaurant, demo, onOrderMore, onCallSta
               <button type="button" className="btn-sm" onClick={() => void copyUpi(restaurant.upiId!)}>Copy UPI ID</button>
             </div>
             {copyMsg && <p className="small" role="status" style={{ margin: 0 }}>{copyMsg}</p>}
-            <p className="muted small" style={{ margin: 0 }}>
-              Opens GPay, PhonePe or Paytm. After paying, show your payment screen to the staff. They will mark the order paid.
-            </p>
+            <p className="muted small">After paying, show the payment screen to staff.</p>
           </div>
         )}
-        {order.paymentStatus !== "paid" && !restaurant.upiId && (
-          <p className="muted small" style={{ margin: 0 }}>{demo ? "Demo only. Use the test controls below to simulate a payment; no money moves." : "Please pay at the counter after your meal."}</p>
+        {payPaise > 0 && !restaurant.upiId && (
+          <p className="muted small" style={{ margin: 0 }}>{demo ? "Sample order. Use the controls below to simulate payment." : "Pay at the counter after your meal."}</p>
         )}
 
-        {onOrderMore ? <button className="btn-ghost" onClick={onOrderMore}>Order more</button> : <a className="btn-ghost" style={{ textAlign: "center", textDecoration: "none" }} href={`/r/${restaurant.slug}${order.tableId ? `?t=${order.tableId}` : ""}`}>
+        {onOrderMore ? <button className="btn btn-dark" onClick={onOrderMore}>Order more</button> : <a className="btn btn-dark" style={{ textAlign: "center", textDecoration: "none" }} href={`/r/${restaurant.slug}${order.tableId ? `?t=${order.tableId}` : ""}`}>
           Order more
         </a>}
       </div>
