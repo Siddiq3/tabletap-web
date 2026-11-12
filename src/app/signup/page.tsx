@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { PASSWORD_MIN, isValidUsername, normalizeIndianPhone } from "@/contract";
 import { api } from "@/lib/api-client";
 import { setSession } from "@/lib/auth";
+import { AuthShell } from "@/components/Brand";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -38,9 +39,7 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="page narrow stack" style={{ paddingTop: 40 }}>
-      <h1>Create your account</h1>
-      <p className="muted" style={{ margin: 0 }}>For restaurant owners. Next you&apos;ll set up your restaurant.</p>
+    <AuthShell title="Create your account" sub="Free for 14 days." foot={<>Already have an account? <Link href="/login">Log in</Link></>}>
       <form className="card stack" onSubmit={submit}>
         <label className="field">
           <span>Full name</span>
@@ -49,7 +48,6 @@ export default function SignupPage() {
         <label className="field">
           <span>Username</span>
           <input id="username" required maxLength={30} autoComplete="username" autoCapitalize="none" spellCheck={false} {...field("username")} placeholder="spiceroute" />
-          <small>Letters, numbers, _ and . You can log in with this.</small>
         </label>
         <label className="field">
           <span>Email</span>
@@ -58,7 +56,7 @@ export default function SignupPage() {
         <label className="field">
           <span>Phone</span>
           <input id="phone" type="tel" inputMode="tel" autoComplete="tel" {...field("phone")} placeholder="98765 43210" />
-          <small>Email or phone: at least one. Only email can reset a forgotten password for now.</small>
+          <small>Email or phone — one is enough.</small>
         </label>
         <label className="field">
           <span>Password</span>
@@ -68,9 +66,6 @@ export default function SignupPage() {
         {error && <p className="error" role="alert">{error}</p>}
         <button className="btn" disabled={busy}>{busy ? "Creating…" : "Create account"}</button>
       </form>
-      <p className="muted" style={{ textAlign: "center" }}>
-        Already have an account? <Link href="/login">Log in</Link>
-      </p>
-    </main>
+    </AuthShell>
   );
 }

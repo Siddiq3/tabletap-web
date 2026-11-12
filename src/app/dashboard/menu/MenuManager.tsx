@@ -73,7 +73,7 @@ export function MenuManager() {
       <form className="card stack" onSubmit={addDish}>
         <h2 style={{ fontSize: 18 }}>Add a dish</h2>
         {menu.categories.length === 0 && (
-          <p className="muted small" style={{ margin: 0 }}>Tip: add categories first (Starters, Mains, Drinks) so guests can jump between them.</p>
+          <p className="muted small" style={{ margin: 0 }}>Tip: add categories first (Starters, Mains, Drinks).</p>
         )}
         <div className="form-grid">
           <label className="field"><span>Dish name</span><input id="item-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Paneer Tikka" /></label>

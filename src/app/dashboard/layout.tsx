@@ -9,6 +9,7 @@ import { endStaffSession, useStaffMode } from "@/lib/staff-mode";
 import { DashNav } from "./DashNav";
 import { MemberContext } from "./MemberContext";
 import { StaffLock } from "./StaffLock";
+import { Brand } from "@/components/Brand";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -79,16 +80,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="dash-top">
         <div className="page">
           <div className="row">
-            <div>
-              <h1 style={{ fontSize: 20 }}>{restaurant.name}</h1>
-              <span className="muted small">
-                {session ? null : <>{role} · {restaurant.plan === "trial" ? "Free trial" : `${restaurant.plan} plan`}</>}
-              </span>
+            <div className="dash-id">
+              <Brand />
+              <div style={{ minWidth: 0 }}>
+                <h1>{restaurant.name}</h1>
+                {!session && <span className="muted small" style={{ textTransform: "capitalize" }}>{role}{restaurant.plan === "trial" ? " · Free trial" : ""}</span>}
+              </div>
             </div>
             <span className="row" style={{ gap: 6 }}>
               {session && <span className="staff-badge">{session.staff.name} · {session.staff.role}</span>}
               {lockApplies && !locked && <button className="btn-sm btn-dark" onClick={lock}>Switch staff</button>}
-              <a className="btn-sm" href={`/r/${restaurant.slug}`} target="_blank" rel="noreferrer">View guest menu</a>
+              <a className="btn-sm" href={`/r/${restaurant.slug}`} target="_blank" rel="noreferrer">Guest menu ↗</a>
               {!session && !locked && (
                 <button className="btn-sm" onClick={async () => { endStaffSession(); await signOut(); router.replace("/login"); }}>Log out</button>
               )}

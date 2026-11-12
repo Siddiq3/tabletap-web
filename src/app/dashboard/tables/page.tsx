@@ -34,7 +34,7 @@ export default function TablesPage() {
     <div className="stack" style={{ marginTop: 16 }}>
       <div className="row no-print">
         <p className="muted" style={{ margin: 0 }}>
-          Print these and stick one on each table. Each QR opens your menu with the table number already set.
+          One QR per table. Print and stick them on.
         </p>
         <button className="btn-ghost" onClick={() => window.print()}>Print QR sheet</button>
       </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PASSWORD_MIN } from "@/contract";
 import { updatePassword, waitForRecoverySession } from "@/lib/auth";
+import { AuthShell } from "@/components/Brand";
 
 /** Landing page of Supabase's reset email (PASSWORD_RESET_URL on the backend). */
 export default function ResetPasswordPage() {
@@ -30,8 +31,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="page narrow stack" style={{ paddingTop: 64 }}>
-      <h1>Choose a new password</h1>
+    <AuthShell title="Choose a new password">
       {ready === null && <p className="muted">Checking your link…</p>}
       {ready === false && (
         <p className="error">This reset link has expired or was already used. <a href="/login">Request a new one</a>.</p>
@@ -47,6 +47,6 @@ export default function ResetPasswordPage() {
           <button className="btn" disabled={busy}>{busy ? "Saving…" : "Save and log in"}</button>
         </form>
       )}
-    </main>
+    </AuthShell>
   );
 }
